@@ -1,0 +1,45 @@
+* {
+    font-family: 'Source Sans Pro';
+}
+
+.fondo-header {
+    background-image: url(images/pic1.jpeg);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+
+/* Fonts */
+
+.negrilla {
+    font-weight: bold;
+}
+
+.fon-coiny {
+    font-family: 'Coiny';
+}
+
+.px14 {
+    font-size: 14px;
+}
+
+.px18 {
+    font-size: 18px;
+}
+
+.px22 {
+    font-size: 22px;
+}
+
+.px32 {
+    font-size: 32px;
+}
+
+.px44 {
+    font-size: 44px;
+}
+
+.px60 {
+    font-size: 60px;
+}
