@@ -1,43 +1,52 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Chimenea</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">    
-    <link rel="stylesheet" type="text/css" href="style.css">
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
-  </head>
-  <body>
-    <div class="topnav">
-      <h1>Control de Chimenea</h1>
-    </div>
-    <div class="content">
-      <div class="card-grid">
-        <div class="card">
-          <p class="card-title"><i class="fas fa-lightbulb"></i> Encendido Chimenea</p>
-          <p>
-            <a href="on"><button class="button-on">Bajo</button></a>
-            <a href="onAlt"><button class="button-on">Alto</button></a>
-            <a href="off"><button class="button-off">OFF</button></a>
-          </p>
-          <p class="state">Estado: %STATE%</p>
-        </div>
-      </div>
-    </div>
 
-    <div class="content">
-      <div class="card-grid">
-        <div class="card">
-          <p class="card-title"><i class="fas fa-lightbulb"></i>Temporizador</p>
-          <p>
-            <form action="/time">
-              Tiempo en minutos <input type="text" name="input1">
-              <input href="on" type="submit" value="Enviar">
-            </form>
-          </p>
-          <p class="state">Tiempo restante: %CONTEO%</p>
-        </div>
+<head>
+  <title>Chimenea</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+    integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+</head>
+
+<body>
+  <div class="topnav">
+    <h1>Control de Chimenea</h1>
+  </div>
+  <div class="content">
+    <div class="card-grid">
+      <div class="card">
+        <p class="card-title"><i class="fas fa-lightbulb"></i> Encendido Chimenea</p>
+        <p>
+          <button id='BTN_BAJO' class="button-on">Bajo</button>
+          <button id='BTN_ALTO'class="button-on">Alto</button>
+          <button id='BTN_OFF'class="button-off">OFF</button>
+        </p>
+
+        <p class="state">Estado: %STATE%</p>
       </div>
     </div>
-  </body>
+  </div>
+
+  <div class="content">
+    <div class="card-grid">
+      <div class="card">
+        <p class="card-title"><i class="fas fa-lightbulb"></i>Parametros de Configuracion</p>
+        <p>Sensor llama:  <span id='rand'>-</span></p>
+        <p>Fijado en:  <span id='sensorVal'>-</span></p>
+        <input type="text" id="SENSOR_TEXTO" style="width:auto" >
+        <input type="submit" id="BTN_LLAMA" value="Ajs Llama"  >
+        </p>
+        <p>
+        <p>Sensor Temperatura:  <span id='temp'>-</span></p>
+        <p>Fijada en:  <span id='tempVal'>-</span></p>
+        <input type="text" id="TEMP_TEXTO" style="width:auto; ">
+        <input type="submit" id='BTN_TEMP' value="Ajs Temp">
+      </div>
+    </div>
+  </div>
+  <script src="js.js"></script>
+</body>
+
 </html>
