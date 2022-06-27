@@ -29,13 +29,14 @@
 #define EEPROM_SIZE 4000
 char direccion0 = 0;
 const int direccion1 = 1;
+const int direccion2 = 2;
 // Alexa
 //#include <Espalexa.h>
 
-int chimeneabajo = 34;
-int chimeneaalto = 17;
+//int chimeneabajo = 34;
+//int chimeneaalto = 17;
 
-/////Espalexa alexita;
+//Espalexa espalexa;
 
 void Funcionchimeneabajo(uint8_t brightness);
 void Funcionchimeneaalto(uint8_t brightness);
@@ -83,28 +84,39 @@ IPAddress subnet(255, 255, 0, 0);
 // Variables de tiempo
 unsigned long previousMillis = 0;
 const long interval = 1000; // Es usada como tiempo de espera de la conexion WiFi
-const long interval1 = 1000;
 
-// Pines GPIO
+// Pines activacion de chispa y de valvulas de gas
 const int GasBajo = 23; // Apertura valvula baja de Gas
 const int Chispa = 22;  // Encendido chispa
 const int GasAlto = 21; // Apertura valvula alta de Gas
 
-const int ContBaj = 16; // Encendido Bajo Chimenea
-const int ContAlt = 4;  // Encendido Alto Chimenea
-const int ContAp = 0;   // Apagado Chimenea
+// Pines activacion por control remoto
+const int ContBaj = 25; // Encendido Bajo Chimenea
+const int ContAlt = 33; // Encendido Alto Chimenea
+const int ContAp = 26;  // Apagado Chimenea
 
 const int Sensor = 34; // Sensor de llama
 double temperatura;    // Temperatura enviada por el sensor MCP9700 al pin
 int sensorVal = 0;     // Valor seteado por el usuario
 int tempVal = 0;       // Valor seteado por el usuario
 
-int sensorVal1 = 0;
+int sensorVal1 = 0; // Valor enviado por websocket
 int tempVal1 = 0;
 int intentos = 0;
 
 bool iniciarCicloEncendido;
 bool blink;
+bool encendidaAlto;
+String estadoChimenea = " ";
+
+unsigned int contadorMinuto = 60;
+int minutos = 0;
+int temporizadorVal = 0;
+
+/////Botones de encendido////
+const int tiempo_max = 1000;
+int botonEncendido = 19;
+int botonApagado = 18;
 
 int lectura = 0;
 
@@ -116,8 +128,8 @@ int inputParam;
 bool encendida = false; // Almacena el estado de la chimenea
 // Variables de tiempo de actualizacion estado de cuenta regresiva
 bool estadoAlto = false; // Almacena el estado actual de la chimenea (Bajo = false, Alto = True)
-int periodo = 1000;
-unsigned long TiempoAhora = 0;
+unsigned long ahora;
+unsigned long intervalMinuto = 60000;
 
 const char *PARAM_INPUT_11 = "input1";
 
@@ -235,20 +247,16 @@ String processor(const String &var)
 
 void setup()
 {
-  // Velocidad de transferencia del puerto serial
   Serial.begin(115200);
-  EEPROM.begin(EEPROM_SIZE);
-  initSPIFFS();
+  EEPROM.begin(EEPROM_SIZE); // Se inicia la memoria permanente y con EEPROM_SIZE se asigna la cantidad de memoria para la taera
+  initSPIFFS();              // Inicia el sistema de archivos SPIFFS el cual se encarga de almacenar archivos en la memoria
 
   // Alexa
-  pinMode(chimeneabajo, OUTPUT);
-  pinMode(chimeneaalto, OUTPUT);
-  // alexita.addDevice("chimenea en bajo", Funcionchimeneabajo);
-  // alexita.addDevice("chimenea en alto", Funcionchimeneaalto);
-  // alexita.begin();
-  // FinAlexa
+  //espalexa.addDevice("chimenea en bajo", Funcionchimeneabajo);
+  //espalexa.addDevice("chimenea en alto", Funcionchimeneaalto);
+  //espalexa.begin();
 
-  // Set GPIO as an OUTPUT
+  // Seteo de pines GIPIO como salidas
   pinMode(GasBajo, OUTPUT);
   digitalWrite(GasBajo, LOW);
   pinMode(Chispa, OUTPUT);
@@ -256,6 +264,16 @@ void setup()
   pinMode(GasAlto, OUTPUT);
   digitalWrite(GasAlto, LOW);
 
+  // pinMode(Sensor, INPUT);
+  // digitalWrite(Sensor, LOW);
+
+  ///Botones de encendido
+  pinMode(botonEncendido, INPUT);
+  //digitalWrite(botonEncendido, LOW);
+  pinMode(botonApagado, INPUT);
+  //digitalWrite(botonApagado, LOW);
+
+  // Seteo de pines GPIO como entradas
   pinMode(ContBaj, INPUT);
   pinMode(ContAlt, INPUT);
   pinMode(ContAp, INPUT);
@@ -279,47 +297,10 @@ void setup()
     server.serveStatic("/", SPIFFS, "/");
 
     // Experimento de entrada de datos
-    server.on("/onAlt", HTTP_GET, [](AsyncWebServerRequest *request)
-              {
-      digitalWrite(GasAlto, HIGH);
-      digitalWrite(GasBajo, HIGH);
-      encendida = true;
-      request->send(SPIFFS, "/index.html", "text/html", false, processor); });
-
-    server.on("/time", HTTP_GET, [](AsyncWebServerRequest *request)
-              {
-      digitalWrite(GasAlto, HIGH);
-      digitalWrite(GasBajo, HIGH);
-      encendida = true;
-      if (request->hasParam(PARAM_INPUT_11))
-      {
-        inputMessage = request->getParam(PARAM_INPUT_11)->value();
-        inputParam = inputMessage.toInt();
-        Serial.println("entradaString");
-        Serial.println(inputMessage);
-        Serial.println("entradaString");
-      }
-      server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-      { request->send(SPIFFS, "/index.html", "text/html", false, processor); });
-    server.serveStatic("/", SPIFFS, "/");
-      request->send(SPIFFS, "/index.html", "text/html", false, processor); });
+    server.on("/configuracion", HTTP_GET, [](AsyncWebServerRequest *request)
+              { request->send(SPIFFS, "/configuracion.html", "text/html", false, processor); });
     server.serveStatic("/", SPIFFS, "/");
 
-    // Route to set GPIO state to HIGH
-    server.on("/on", HTTP_GET, [](AsyncWebServerRequest *request)
-              {
-      digitalWrite(GasBajo, HIGH);
-      digitalWrite(GasAlto, LOW);
-      encendida = true;
-      request->send(SPIFFS, "/index.html", "text/html", false, processor); });
-
-    // Route to set GPIO state to LOW
-    server.on("/off", HTTP_GET, [](AsyncWebServerRequest *request)
-              {
-      digitalWrite(GasBajo, LOW);
-      digitalWrite(GasAlto, LOW);
-      encendida = false;
-      request->send(SPIFFS, "/index.html", "text/html", false, processor); });
     server.begin();
   }
   else
@@ -335,12 +316,11 @@ void setup()
 
     // Web Server Root URL
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-              { request->send(SPIFFS, "/wifimanager.html", "text/html"); });
+              { request->send(SPIFFS, "/wifimanager.html", "text/html"); }); // wifimanager.html
 
     server.serveStatic("/", SPIFFS, "/");
-
     server.on("/", HTTP_POST, [](AsyncWebServerRequest *request)
-              {
+    {
       int params = request->params();
       for(int i=0;i<params;i++){
         AsyncWebParameter* p = request->getParam(i);
@@ -377,14 +357,13 @@ void setup()
             // Write file to save value
             writeFile(SPIFFS, gatewayPath, gateway.c_str());
           }
-          //Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
         }
       }
       request->send(200, "text/plain", "Done. ESP will restart, connect to your router and go to IP address: " + ip);
       delay(3000);
       ESP.restart(); });
-    server.begin();
-  }
+      server.begin();
+    }
   webSocket.begin();                 // start websocket
   webSocket.onEvent(webSocketEvent); // define a callback function -> what does the ESP32 need to do when an event from the websocket is received? -> run function "webSocketEvent()"
 }
@@ -395,6 +374,103 @@ void loop()
   sensorVal1 = EEPROM.read(direccion0) * 13;
   tempVal1 = EEPROM.read(direccion1);
   lectura = analogRead(Sensor);
+
+///////Codigo Encendido Manual
+  int tiempo = millis();
+
+  if(digitalRead(botonEncendido) == HIGH){
+    encendida = true;
+    blink = true;
+    encendidaAlto = false;
+    //digitalWrite(Chispa, blink);
+  }
+
+  while(digitalRead(botonEncendido) == HIGH){
+    if(millis()-tiempo >= tiempo_max){
+      encendidaAlto = true;
+    }
+  }
+
+  if(digitalRead(botonApagado) == HIGH){
+    encendida = false;
+    encendidaAlto = false;
+    blink = false;
+    iniciarCicloEncendido = false;
+    minutos = 0;
+    digitalWrite(GasBajo, LOW);
+    digitalWrite(GasAlto, LOW);
+    digitalWrite(Chispa, LOW);
+  }  
+
+////////Codigo Encendido Contro Remoto
+  if (digitalRead(ContBaj) == HIGH)
+  {
+    encendida = true;
+    blink = true;
+    encendidaAlto = false;
+    digitalWrite(Chispa, blink);
+  }
+  if (digitalRead(ContAlt) == HIGH)
+  {
+    encendidaAlto = true;
+  }
+  if (digitalRead(ContAp) == HIGH)
+  {
+    encendida = false;
+    encendidaAlto = false;
+    blink = false;
+    iniciarCicloEncendido = false;
+    minutos = 0;
+    digitalWrite(GasBajo, LOW);
+    digitalWrite(GasAlto, LOW);
+    digitalWrite(Chispa, LOW);
+  }
+
+/////Codigo Lectura estado de chimenea
+  if (digitalRead(GasBajo))
+  {
+    estadoChimenea = "Encendida";
+  }
+  else
+  {
+    estadoChimenea = "Apagada";
+  }
+
+/////Funcion Encendido chimenea
+  if (encendida == true)
+  {
+    digitalWrite(Chispa, blink);
+    digitalWrite(GasBajo, HIGH);
+    if (lectura < sensorVal1)
+    {
+      iniciarCicloEncendido = true;
+    }
+    else if (lectura > sensorVal1)
+    {
+      blink = false;
+      iniciarCicloEncendido = false;
+    }
+  }
+
+  if (encendidaAlto == true && lectura > sensorVal1)
+  {
+    digitalWrite(GasAlto, HIGH);
+  }
+
+  if (encendidaAlto == false){
+    digitalWrite(GasAlto, LOW);
+  }
+
+  if (encendida == false)
+  {
+      digitalWrite(GasBajo, LOW);
+      digitalWrite(GasAlto, LOW);
+      encendida = false;
+      encendidaAlto = false;
+      iniciarCicloEncendido = false;
+      blink = false;
+      intentos = 0;
+  }
 
   unsigned long now = millis(); // read out the current "time" ("millis()" gives the time in ms since the Arduino started)
   if ((unsigned long)(now - previousMillis) >= interval)
@@ -409,38 +485,53 @@ void loop()
     object["temp"] = temperatura;
     object["sensorVal"] = sensorVal1;
     object["tempVal"] = tempVal1;
+    object["estadoChimenea"] = estadoChimenea;
+    object["temporizador"] = minutos;
     serializeJson(doc_tx, jsonString);
-    // Serial.println(jsonString);
+   
     webSocket.broadcastTXT(jsonString);
     previousMillis = now;
     if (blink == true && iniciarCicloEncendido == true)
     {
-      digitalWrite(Chispa, blink);
       blink = false;
       return;
     }
-    else if (blink == false)
+    else if (blink == false && iniciarCicloEncendido == true)
     {
-      digitalWrite(Chispa, blink);
       blink = true;
       intentos++;
     }
-  }
-  if(intentos >=10){
-    digitalWrite(GasBajo, LOW);
-    digitalWrite(GasAlto, LOW);
-    encendida = false;
-    iniciarCicloEncendido = false;
-    blink = false;
-    intentos = 0;
-  }
 
-  if (encendida == true){
-    digitalWrite(GasBajo, HIGH);
-    if(lectura > sensorVal1){
-      iniciarCicloEncendido = true;
-    }else if(lectura < sensorVal1){
+    if (minutos > 0)
+    {
+      encendida = true;
+      contadorMinuto = contadorMinuto - 1;
+      Serial.println("menos un segundo.................. " + String(contadorMinuto));
+      if (contadorMinuto == 0)
+      {
+        minutos--;
+        Serial.println("menos un minuto................. " + String(minutos));
+        contadorMinuto = 60;
+      }
+      if (minutos == 0 && encendida == true)
+      {
+        minutos = 0;
+        encendida = false;
+        iniciarCicloEncendido = false;
+        digitalWrite(GasBajo, LOW);
+        digitalWrite(GasAlto, LOW);
+      }
+    }
+
+    if (intentos >= 10)
+    {
+      digitalWrite(GasBajo, LOW);
+      digitalWrite(GasAlto, LOW);
+      encendida = false;
+      encendidaAlto = false;
       iniciarCicloEncendido = false;
+      blink = false;
+      intentos = 0;
     }
   }
 }
@@ -474,13 +565,20 @@ void webSocketEvent(byte num, WStype_t type, uint8_t *payload, size_t length)
       const char *setTemp = doc_rx["sensorTemp"];
       tempVal = String(setTemp).toInt();
 
+      const char *setTemporizador = doc_rx["setTemporizador"];
+      temporizadorVal = String(setTemporizador).toInt();
+
+      if (temporizadorVal != 0)
+      {
+        minutos = temporizadorVal;
+      }
+
       if (sensorVal != 0)
       {
         EEPROM.write(direccion0, sensorVal); // EEPROM.put(address, boardId);
         delay(10);
         EEPROM.commit();
         sensorVal1 = EEPROM.read(direccion0);
-        Serial.println("Entro al if SensorVal y su valor es: " + String(sensorVal1));
       }
 
       if (tempVal != 0)
@@ -489,36 +587,35 @@ void webSocketEvent(byte num, WStype_t type, uint8_t *payload, size_t length)
         delay(10);
         EEPROM.commit();
         tempVal1 = EEPROM.read(direccion1);
-        Serial.println("Entro al if tempVal y su valor es: " + String(tempVal1));
       }
 
       if (estado == "on")
       {
         encendida = true;
-        digitalWrite(GasAlto, LOW);
-        Serial.print("El estado de la chimenea es: ");
-        Serial.println(encendida);
+        blink = true;
+        encendidaAlto = false;
+        digitalWrite(Chispa, blink);
+        digitalWrite(GasBajo, HIGH);
       }
 
       if (estado == "alto")
       {
         encendida = true;
-        digitalWrite(GasBajo, HIGH);
-        digitalWrite(GasAlto, HIGH);
-        Serial.println("El estado de la chimenea es: ");
-        Serial.print(encendida);
-        Serial.println("El estado de la llama es: ");
-        Serial.print(estadoAlto);
+        encendidaAlto = true;
       }
 
       if (estado == "off")
       {
+        blink = false;
         encendida = false;
+        encendidaAlto = false;
         iniciarCicloEncendido = false;
+        minutos = 0;
+        intentos = 0;
+        contadorMinuto = 0;
         digitalWrite(GasAlto, LOW);
         digitalWrite(GasBajo, LOW);
-        intentos = 0;       
-        Serial.println("El estado de la chimenea es:" + String(encendida));
+        digitalWrite(Chispa, LOW);
       }
     }
     break;
@@ -530,12 +627,12 @@ void Funcionchimeneabajo(uint8_t brightness)
 
   if (brightness)
   {
-    digitalWrite(chimeneabajo, HIGH);
+    //digitalWrite(chimeneabajo, HIGH);
     Serial.println(" Chimenea en bajo encendida ");
   }
   else
   {
-    digitalWrite(chimeneabajo, LOW);
+    //digitalWrite(chimeneabajo, LOW);
     Serial.println(" Chimenea en bajo apagada ");
   }
 }
@@ -545,12 +642,12 @@ void Funcionchimeneaalto(uint8_t brightness)
 
   if (brightness)
   {
-    digitalWrite(chimeneaalto, HIGH);
+    //digitalWrite(chimeneaalto, HIGH);
     Serial.println(" Chimenea en alto encendida ");
   }
   else
   {
-    digitalWrite(chimeneaalto, LOW);
+    //digitalWrite(chimeneaalto, LOW);
     Serial.println(" Chimenea en alto apagada ");
   }
 }

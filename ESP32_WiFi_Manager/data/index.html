@@ -20,32 +20,18 @@
         <p class="card-title"><i class="fas fa-lightbulb"></i> Encendido Chimenea</p>
         <p>
           <button id='BTN_BAJO' class="button-on">Bajo</button>
-          <button id='BTN_ALTO'class="button-on">Alto</button>
-          <button id='BTN_OFF'class="button-off">OFF</button>
+          <button id='BTN_ALTO' class="button-on">Alto</button>
+          <button id='BTN_OFF' class="button-off">OFF</button>
         </p>
+        <p>Tiempo restante para apagado <span id='temporizador'>-</span> minutos</p>
+        <input type="text" id="TEXT_TEMPORIZADOR" style="width:auto; ">
+        <input type="submit" id='BTN_TEMPORIZADOR' value="Aplicar">
 
-        <p class="state">Estado: %STATE%</p>
+        <p>Chimenea <span id='estadoChimenea'>-</span></p>
       </div>
     </div>
   </div>
 
-  <div class="content">
-    <div class="card-grid">
-      <div class="card">
-        <p class="card-title"><i class="fas fa-lightbulb"></i>Parametros de Configuracion</p>
-        <p>Sensor llama:  <span id='rand'>-</span></p>
-        <p>Fijado en:  <span id='sensorVal'>-</span></p>
-        <input type="text" id="SENSOR_TEXTO" style="width:auto" >
-        <input type="submit" id="BTN_LLAMA" value="Ajs Llama"  >
-        </p>
-        <p>
-        <p>Sensor Temperatura:  <span id='temp'>-</span></p>
-        <p>Fijada en:  <span id='tempVal'>-</span></p>
-        <input type="text" id="TEMP_TEXTO" style="width:auto; ">
-        <input type="submit" id='BTN_TEMP' value="Ajs Temp">
-      </div>
-    </div>
-  </div>
   <script src="js.js"></script>
 </body>
 

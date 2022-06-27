@@ -24,6 +24,26 @@ var sensorSet;
     console.log(estado);
   }
 
+  document.getElementById('BTN_LLAMA').addEventListener('click', boton_ajuste_llama);
+  function boton_ajuste_llama() {
+    sensorSet = document.getElementById("SENSOR_TEXTO").value;
+    estado = {sensorSet: sensorSet};
+    Socket.send(JSON.stringify(estado));
+    console.log(estado);
+    console.log(sensorSet);
+    console.log(setTemp);
+  }
+
+  document.getElementById('BTN_TEMP').addEventListener('click', boton_ajuste_temp);
+  function boton_ajuste_temp() {
+    setTemp = document.getElementById("TEMP_TEXTO").value;
+    estado = {sensorTemp: setTemp};
+    Socket.send(JSON.stringify(estado));
+    console.log(estado);
+    console.log(setTemp);
+    console.log(sensorSet);
+  }
+
   document.getElementById('BTN_TEMPORIZADOR').addEventListener('click', temporizador);
   function temporizador() {
     setTemporizador = document.getElementById("TEXT_TEMPORIZADOR").value;
@@ -34,7 +54,6 @@ var sensorSet;
     console.log(sensorSet);
   }
 
-
   function init() {
     Socket = new WebSocket('ws://' + window.location.hostname + ':81/');
     Socket.onmessage = function(event) {
@@ -44,6 +63,10 @@ var sensorSet;
   
   function processCommand(event) {
     var obj = JSON.parse(event.data);    
+    document.getElementById('rand').innerHTML = obj.sensor;
+    document.getElementById('temp').innerHTML = obj.temp;
+    document.getElementById('tempVal').innerHTML = obj.tempVal;
+    document.getElementById('sensorVal').innerHTML = obj.sensorVal;
     document.getElementById('estadoChimenea').innerHTML = obj.estadoChimenea;
     document.getElementById('temporizador').innerHTML = obj.temporizador;
     console.log(obj.sensor);
