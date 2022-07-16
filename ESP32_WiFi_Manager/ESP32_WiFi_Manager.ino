@@ -382,7 +382,6 @@ void loop()
     encendida = true;
     blink = true;
     encendidaAlto = false;
-    //digitalWrite(Chispa, blink);
   }
 
   while(digitalRead(botonEncendido) == HIGH){
@@ -523,7 +522,7 @@ void loop()
       }
     }
 
-    if (intentos >= 10)
+    if (intentos >= 100)
     {
       digitalWrite(GasBajo, LOW);
       digitalWrite(GasAlto, LOW);
